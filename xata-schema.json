@@ -1,0 +1,190 @@
+{
+  "tables": [
+    {
+      "name": "chats",
+      "columns": [
+        {
+          "name": "file_key",
+          "type": "text",
+          "notNull": true,
+          "unique": false,
+          "defaultValue": null
+        },
+        {
+          "name": "pdf_name",
+          "type": "text",
+          "notNull": true,
+          "unique": false,
+          "defaultValue": null
+        },
+        {
+          "name": "pdf_url",
+          "type": "text",
+          "notNull": true,
+          "unique": false,
+          "defaultValue": null
+        },
+        {
+          "name": "user_id",
+          "type": "varchar(256)",
+          "notNull": true,
+          "unique": false,
+          "defaultValue": null
+        },
+        {
+          "name": "xata_createdat",
+          "type": "datetime",
+          "notNull": true,
+          "unique": false,
+          "defaultValue": "now()"
+        },
+        {
+          "name": "xata_id",
+          "type": "text",
+          "notNull": true,
+          "unique": true,
+          "defaultValue": "('rec_'::text || (xata_private.xid())::text)"
+        },
+        {
+          "name": "xata_updatedat",
+          "type": "datetime",
+          "notNull": true,
+          "unique": false,
+          "defaultValue": "now()"
+        },
+        {
+          "name": "xata_version",
+          "type": "int",
+          "notNull": true,
+          "unique": false,
+          "defaultValue": "0"
+        }
+      ]
+    },
+    {
+      "name": "messages",
+      "columns": [
+        {
+          "name": "chat_id",
+          "type": "link",
+          "link": {
+            "table": "chats"
+          },
+          "notNull": false,
+          "unique": false,
+          "defaultValue": null
+        },
+        {
+          "name": "content",
+          "type": "text",
+          "notNull": true,
+          "unique": false,
+          "defaultValue": null
+        },
+        {
+          "name": "role",
+          "type": "text",
+          "notNull": true,
+          "unique": false,
+          "defaultValue": null
+        },
+        {
+          "name": "xata_createdat",
+          "type": "datetime",
+          "notNull": true,
+          "unique": false,
+          "defaultValue": "now()"
+        },
+        {
+          "name": "xata_id",
+          "type": "text",
+          "notNull": true,
+          "unique": true,
+          "defaultValue": "('rec_'::text || (xata_private.xid())::text)"
+        },
+        {
+          "name": "xata_updatedat",
+          "type": "datetime",
+          "notNull": true,
+          "unique": false,
+          "defaultValue": "now()"
+        },
+        {
+          "name": "xata_version",
+          "type": "int",
+          "notNull": true,
+          "unique": false,
+          "defaultValue": "0"
+        }
+      ]
+    },
+    {
+      "name": "vectors",
+      "columns": [
+        {
+          "name": "content",
+          "type": "text",
+          "notNull": true,
+          "unique": false,
+          "defaultValue": null
+        },
+        {
+          "name": "embedding",
+          "type": "vector",
+          "notNull": false,
+          "unique": false,
+          "defaultValue": null
+        },
+        {
+          "name": "fileKey",
+          "type": "text",
+          "notNull": true,
+          "unique": false,
+          "defaultValue": null
+        },
+        {
+          "name": "loc",
+          "type": "json",
+          "notNull": false,
+          "unique": false,
+          "defaultValue": null
+        },
+        {
+          "name": "page_number",
+          "type": "int",
+          "notNull": true,
+          "unique": false,
+          "defaultValue": null
+        },
+        {
+          "name": "xata_createdat",
+          "type": "datetime",
+          "notNull": true,
+          "unique": false,
+          "defaultValue": "now()"
+        },
+        {
+          "name": "xata_id",
+          "type": "text",
+          "notNull": true,
+          "unique": true,
+          "defaultValue": "('rec_'::text || (xata_private.xid())::text)"
+        },
+        {
+          "name": "xata_updatedat",
+          "type": "datetime",
+          "notNull": true,
+          "unique": false,
+          "defaultValue": "now()"
+        },
+        {
+          "name": "xata_version",
+          "type": "int",
+          "notNull": true,
+          "unique": false,
+          "defaultValue": "0"
+        }
+      ]
+    }
+  ]
+}
