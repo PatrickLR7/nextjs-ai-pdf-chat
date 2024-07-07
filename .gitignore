@@ -38,4 +38,7 @@ next-env.d.ts
 
 .env
 
+# Xata Files
 .xatarc
+.xata
+src/lib/db/xata.ts
