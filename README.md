@@ -1,38 +1,74 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Chat with Any PDF - AI SDK & RAG
 
-## Getting Started
+A powerful, full-stack AI application that allows you to upload PDF documents and have intelligent conversations about their content. Leveraging Retrieval-Augmented Generation (RAG) for accurate, context-aware responses.
 
-First, run the development server:
+## 🚀 Screenshots
 
+![Landing Page](./public/screenshots/landing.png)
+*Modern, responsive landing page with easy PDF uploads.*
+
+![Chat Interface](./public/screenshots/chat.png)
+*Interactive chat experience with side-by-side PDF viewing and AI-powered answers.*
+
+## 🛠 Tech Stack
+
+- **Framework**: [Next.js](https://nextjs.org/) (App Router)
+- **Authentication**: [Clerk](https://clerk.dev/)
+- **Database**: [Supabase](https://supabase.com/) Postgres
+- **Vector Storage**: [pgvector](https://github.com/pgvector/pgvector) on Supabase
+- **AI Models (via Amazon Bedrock)**:
+  - **Embeddings**: `amazon.titan-embed-text-v2:0` (1024 dimensions)
+  - **LLM**: `anthropic.claude-3-haiku-20240307-v1:0`
+- **ORM**: [Drizzle ORM](https://orm.drizzle.team/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **Components**: [Shadcn UI](https://ui.shadcn.com/) & [Lucide React](https://lucide.dev/)
+
+## 🧠 How it Works (RAG Architecture)
+
+This project implements a sophisticated **Retrieval-Augmented Generation (RAG)** pipeline to provide grounded AI responses based on your documents.
+
+1.  **Document Ingestion**: When a PDF is uploaded, the text is extracted and split into meaningful chunks.
+2.  **Vector Embeddings**: Each text chunk is processed through the **Amazon Bedrock Titan** model to create a high-dimensional vector representing its semantic meaning.
+3.  **Vector Storage**: These embeddings are stored in a **Supabase Postgres** database using the `pgvector` extension.
+4.  **Semantic Search**: When you ask a question, the query is converted into an embedding. We then perform a cosine similarity search in the database to retrieve the top-5 most relevant text chunks from your PDF.
+5.  **Augmented Response**: The retrieved context is combined with your question and sent to **Claude 3 Haiku** via Amazon Bedrock. The model uses the specific context to answer accurately, ensuring the AI doesn't "hallucinate" information not present in the document.
+
+## ⚙️ Getting Started
+
+### 1. Clone the repository
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/PatrickLR7/nextjs-ai-pdf-chat.git
+cd nextjs-ai-pdf-chat
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Environment Variables
+Create a `.env` file based on `.env.example`:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```env
+NEXT_PUBLIC_CLERK_PUBLISHED_KEY=
+CLERK_SECRET_KEY=
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+DATABASE_URL=
 
-## Learn More
+AWS_REGION=
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+```
 
-To learn more about Next.js, take a look at the following resources:
+### 3. Install dependencies
+```bash
+npm install
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 4. Run migrations
+```bash
+npm run db:push
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+### 5. Start the development server
+```bash
+npm run dev
+```
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
-
-
+## 📜 License
+This project is licensed under the MIT License.
