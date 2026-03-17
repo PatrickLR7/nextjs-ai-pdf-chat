@@ -1,118 +1,51 @@
 import {
   pgTable,
-  uniqueIndex,
-  unique,
   text,
   varchar,
-  integer,
   timestamp,
-  real,
+  uuid,
+  customType,
 } from "drizzle-orm/pg-core";
 
-export const chats = pgTable(
-  "chats",
-  {
-    pdfName: text("pdf_name").notNull(),
-    pdfUrl: text("pdf_url").notNull(),
-    userId: varchar("user_id", { length: 256 }).notNull(),
-    fileKey: text("file_key").notNull(),
-    xataVersion: integer("xata_version").default(0).notNull(),
-    xataCreatedat: timestamp("xata_createdat", {
-      withTimezone: true,
-      mode: "string",
-    })
-      .defaultNow()
-      .notNull(),
-    xataUpdatedat: timestamp("xata_updatedat", {
-      withTimezone: true,
-      mode: "string",
-    })
-      .defaultNow()
-      .notNull(),
-    xataId: text("xata_id")
-      .default(`'rec_'::text || (xata_private.xid())::text`)
-      .notNull(),
+// Define a custom vector type for pgvector
+// Titan Text Embeddings v2 defaults to 1024 dimensions
+const vectorType = customType<{ data: number[]; driverData: string }>({
+  dataType() {
+    return "vector(1024)";
   },
-  (table) => {
-    return {
-      pgrollNewXataIdKey: uniqueIndex("chats__pgroll_new_xata_id_key").on(
-        table.xataId
-      ),
-      chatsPgrollNewXataIdKey: unique("chats__pgroll_new_xata_id_key").on(
-        table.xataId
-      ),
-    };
-  }
-);
+  toDriver(val: number[]) {
+    return `[${val.join(",")}]`;
+  },
+  fromDriver(val: string) {
+    if (typeof val === "string") {
+      return val.slice(1, -1).split(",").map(Number);
+    }
+    return val as any; // Depending on the driver, it might come back as an array already
+  },
+});
 
-export const messages = pgTable(
-  "messages",
-  {
-    content: text("content").notNull(),
-    role: text("role").notNull(),
-    xataCreatedat: timestamp("xata_createdat", {
-      withTimezone: true,
-      mode: "string",
-    })
-      .defaultNow()
-      .notNull(),
-    xataUpdatedat: timestamp("xata_updatedat", {
-      withTimezone: true,
-      mode: "string",
-    })
-      .defaultNow()
-      .notNull(),
-    xataId: text("xata_id")
-      .default(`'rec_'::text || (xata_private.xid())::text`)
-      .notNull(),
-    xataVersion: integer("xata_version").default(0).notNull(),
-    chatId: text("chat_id").references(() => chats.xataId, {
-      onDelete: "cascade",
-    }),
-  },
-  (table) => {
-    return {
-      pgrollNewXataIdKey: uniqueIndex("messages__pgroll_new_xata_id_key").on(
-        table.xataId
-      ),
-      messagesPgrollNewXataIdKey: unique("messages__pgroll_new_xata_id_key").on(
-        table.xataId
-      ),
-    };
-  }
-);
+export const chats = pgTable("chats", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  pdfName: text("pdf_name").notNull(),
+  pdfUrl: text("pdf_url").notNull(),
+  userId: varchar("user_id", { length: 256 }).notNull(),
+  fileKey: text("file_key").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
 
-export const vectors = pgTable(
-  "vectors",
-  {
-    xataId: text("xata_id")
-      .default(`'rec_'::text || (xata_private.xid())::text`)
-      .notNull(),
-    xataVersion: integer("xata_version").default(0).notNull(),
-    xataCreatedat: timestamp("xata_createdat", {
-      withTimezone: true,
-      mode: "string",
-    })
-      .defaultNow()
-      .notNull(),
-    xataUpdatedat: timestamp("xata_updatedat", {
-      withTimezone: true,
-      mode: "string",
-    })
-      .defaultNow()
-      .notNull(),
-    content: text("content").notNull(),
-    embedding: real("embedding").array(),
-    fileKey: text("file_key"),
-  },
-  (table) => {
-    return {
-      pgrollNewXataIdKey: uniqueIndex("_pgroll_new_vectors_xata_id_key").on(
-        table.xataId
-      ),
-      vectorsPgrollNewXataIdKey: unique("_pgroll_new_vectors_xata_id_key").on(
-        table.xataId
-      ),
-    };
-  }
-);
+export const messages = pgTable("messages", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  chatId: uuid("chat_id")
+    .references(() => chats.id, { onDelete: "cascade" })
+    .notNull(),
+  content: text("content").notNull(),
+  role: text("role").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const vectors = pgTable("vectors", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  content: text("content").notNull(),
+  embedding: vectorType("embedding").notNull(),
+  fileKey: text("file_key").notNull(),
+});

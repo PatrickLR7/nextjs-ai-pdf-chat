@@ -1,4 +1,5 @@
-import { getXataClient } from "@/lib/db/xata";
+import { db } from "@/lib/db";
+import { chats } from "@/lib/db/schema";
 import { getS3Url } from "@/lib/s3";
 import { loadS3IntoVectorTable } from "@/lib/vector-store";
 import { auth } from "@clerk/nextjs";
@@ -12,15 +13,21 @@ export async function POST(req: Request, res: Response) {
   try {
     const body = await req.json();
     const { file_key, file_name } = body;
+    
+    // Process PDF and ingest to vector DB using Bedrock
     await loadS3IntoVectorTable(file_key);
-    const client = getXataClient();
-    const chat = await client.db.chats.create({
-      file_key,
-      pdf_name: file_name,
-      pdf_url: getS3Url(file_key),
-      user_id: userId,
+    
+    // Create new chat record in Supabase
+    const chat = await db.insert(chats).values({
+      fileKey: file_key,
+      pdfName: file_name,
+      pdfUrl: getS3Url(file_key),
+      userId: userId,
+    }).returning({
+      insertedId: chats.id
     });
-    return NextResponse.json({ chatId: chat.id }, { status: 200 });
+    
+    return NextResponse.json({ chatId: chat[0].insertedId }, { status: 200 });
   } catch (error) {
     console.error(error);
     return NextResponse.json(

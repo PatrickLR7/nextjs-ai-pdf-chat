@@ -1,0 +1,13 @@
+{
+  "version": "5",
+  "dialect": "pg",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1773634658608,
+      "tag": "0000_talented_bloodstrike",
+      "breakpoints": true
+    }
+  ]
+}

@@ -7,9 +7,9 @@ export default {
   driver: "pg",
   schema: "./src/lib/db/schema.ts",
   dbCredentials: {
-    connectionString: process.env.XATA_DB_URL!,
+    connectionString: process.env.DATABASE_URL!,
   },
   verbose: true,
   strict: true,
-  out: "./src/lib/db",
+  out: "./src/lib/db/migrations",
 } satisfies Config;

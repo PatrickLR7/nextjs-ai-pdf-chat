@@ -1,9 +1,9 @@
 import { cn } from "@/lib/utils";
-import { type Message } from "ai/react";
+import { type UIMessage } from "@ai-sdk/react";
 import Loader from "./Loader";
 
 type Props = {
-  messages: Message[];
+  messages: UIMessage[];
   isLoading: boolean;
   completionLoading: boolean;
 };
@@ -35,7 +35,14 @@ const MessageList = ({ messages, isLoading, completionLoading }: Props) => {
                 }
               )}
             >
-              <p>{message.content}</p>
+              <div className="flex flex-col">
+                {message.parts?.map((part, i) => {
+                  if (part.type === "text") {
+                    return <p key={i}>{part.text}</p>;
+                  }
+                  return null;
+                })}
+              </div>
             </div>
           </div>
         );

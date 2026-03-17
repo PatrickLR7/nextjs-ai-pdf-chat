@@ -1,35 +1,34 @@
-import { XataVectorSearch } from "@langchain/community/vectorstores/xata";
-import { OpenAIEmbeddings } from "@langchain/openai";
-import { getXataClient } from "./db/xata";
+import { db } from "./db";
+import { vectors } from "./db/schema";
+import { eq, sql, desc } from "drizzle-orm";
+import { embed } from "ai";
+import { bedrock } from "@ai-sdk/amazon-bedrock";
 
 export async function getMatchesFromQuery(query: string, fileKey: string) {
   try {
-    const client = getXataClient();
-    const table = "vectors";
-    const embeddings = new OpenAIEmbeddings({
-      openAIApiKey: process.env.OPEN_AI_API_KEY,
+    // Generate embedding for the search query
+    const { embedding } = await embed({
+      model: bedrock.embedding("amazon.titan-embed-text-v2:0"),
+      value: query,
     });
 
-    /* Using Langchain XataVectorSearch Helper */
-    const store = new XataVectorSearch(embeddings, { client, table });
-    const queryResult = await store.similaritySearchWithScore(query, 5, {
-      fileKey, // Important! The property you use for filtering here MUST be a string column type in Xata. It doesn't work properly with type text.
-    });
+    // Formatting embedding array so pgvector can parse it
+    const embeddingString = `[${embedding.join(",")}]`;
 
-    /* Alternative: Directly with Xata Client */
-    // const queryEmbeddings = await embeddings.embedQuery(query);
-    // const { records } = await client.db.vectors.vectorSearch(
-    //   "embedding",
-    //   queryEmbeddings,
-    //   {
-    //     size: 5,
-    //     filter: {
-    //       fileKey,
-    //     },
-    //   }
-    // );
+    // Query Supabase using pgvector cosine distance `<=>` operator
+    const similarityQuery = sql<number>`1 - (${vectors.embedding} <=> ${embeddingString}::vector)`;
 
-    return queryResult;
+    const matches = await db.select({
+      content: vectors.content,
+      similarity: similarityQuery,
+    })
+    .from(vectors)
+    .where(eq(vectors.fileKey, fileKey))
+    // we use `orderBy` on the distance itself to get the closest matches
+    .orderBy((t) => desc(t.similarity))
+    .limit(5);
+
+    return matches;
   } catch (error) {
     console.log("error querying embeddings", error);
     throw error;
@@ -39,9 +38,10 @@ export async function getMatchesFromQuery(query: string, fileKey: string) {
 export async function getContext(query: string, fileKey: string) {
   const matches = await getMatchesFromQuery(query, fileKey);
 
-  const qualifyingDocs = matches.filter(([_, score]) => score && score > 0.7);
+  // Filter out low scores (Titan distance scores will vary, 0.4 is a safe starting threshold)
+  const qualifyingDocs = matches.filter((match) => match.similarity > 0.4);
 
-  let docs = qualifyingDocs.map(([document]) => document.pageContent);
-  // 5 vectors
+  let docs = qualifyingDocs.map((match) => match.content);
+  // Max 3000 chars for context window
   return docs.join("\n").substring(0, 3000);
 }

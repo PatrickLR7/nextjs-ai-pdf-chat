@@ -1,10 +1,10 @@
-import { XataVectorSearch } from "@langchain/community/vectorstores/xata";
-import { OpenAIEmbeddings } from "@langchain/openai";
 import { Document } from "@langchain/core/documents";
 import { PDFLoader } from "langchain/document_loaders/fs/pdf";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
-
-import { getXataClient } from "./db/xata";
+import { bedrock } from "@ai-sdk/amazon-bedrock";
+import { embedMany } from "ai";
+import { db } from "./db";
+import { vectors } from "./db/schema";
 import { downloadFromS3 } from "./s3-server";
 
 type PDFPage = {
@@ -25,7 +25,6 @@ export async function loadS3IntoVectorTable(fileKey: string) {
   }
   const loader = new PDFLoader(file.blob);
   const pages = (await loader.load()) as PDFPage[];
-  pages;
 
   // 2. Split and segment the pdf.
   const documents = await Promise.all(
@@ -33,22 +32,34 @@ export async function loadS3IntoVectorTable(fileKey: string) {
   );
   const flatDocuments = documents.flat();
 
-  // 3. Embed Documents and Upload to Xata
-  const ids = await embedDocuments(flatDocuments);
+  // 3. Embed Documents and Upload to Supabase DB via Drizzle
+  await embedDocuments(flatDocuments, fileKey);
 
-  return ids[0];
+  return true;
 }
 
-async function embedDocuments(documents: Document[]) {
-  const client = getXataClient();
-
+async function embedDocuments(documents: Document[], fileKey: string) {
   const table = "vectors";
-  const embeddings = new OpenAIEmbeddings({
-    openAIApiKey: process.env.OPEN_AI_API_KEY,
+  
+  // Extract text chunks to embed
+  const valuesToEmbed = documents.map(doc => doc.pageContent.replace(/\n/g, " "));
+
+  // We are using Titan Text Embeddings V2 with Bedrock
+  // It returns 1024-dimension embeddings by default
+  const { embeddings } = await embedMany({
+    model: bedrock.embedding("amazon.titan-embed-text-v2:0"),
+    values: valuesToEmbed,
   });
-  const store = new XataVectorSearch(embeddings, { client, table });
-  const ids = await store.addDocuments(documents);
-  return ids;
+
+  // Prepare records to insert into Supabase
+  const records = documents.map((doc, i) => ({
+    fileKey,
+    content: doc.pageContent,
+    embedding: embeddings[i],
+  }));
+
+  // Batch insert into the vectors table
+  await db.insert(vectors).values(records);
 }
 
 export const truncateStringByBytes = (str: string, bytes: number) => {

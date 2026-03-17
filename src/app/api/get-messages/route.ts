@@ -1,21 +1,28 @@
 import { auth } from "@clerk/nextjs";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { getXataClient } from "@/lib/db/xata";
+import { db } from "@/lib/db";
+import { messages } from "@/lib/db/schema";
 
 export async function POST(req: Request, res: Response) {
   const { userId } = auth();
-  const client = getXataClient();
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   try {
     const { chatId } = await req.json();
-    const _messages = await client.db.messages
-      .filter({ chat_id: chatId })
-      .getMany();
+    const _messages = await db.select().from(messages).where(eq(messages.chatId, chatId));
 
-    return NextResponse.json(_messages, { status: 200 });
+    // Transform DB rows into UIMessage format that useChat / MessageList expect.
+    // The DB stores a flat `content` string; UIMessage uses a `parts` array.
+    const uiMessages = _messages.map((msg) => ({
+      id: msg.id,
+      role: msg.role as "user" | "assistant",
+      parts: [{ type: "text" as const, text: msg.content }],
+      content: msg.content,
+    }));
+
+    return NextResponse.json(uiMessages, { status: 200 });
   } catch (error) {
     console.error(error);
     return NextResponse.json(
@@ -26,3 +33,4 @@ export async function POST(req: Request, res: Response) {
     );
   }
 }
+

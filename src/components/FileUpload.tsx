@@ -37,8 +37,8 @@ const FileUpload = (props: FileUploadProps) => {
       setUploading(true);
       console.log(acceptedFiles);
       const file = acceptedFiles[0];
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error("Please upload a smaller file");
+      if (file.size > 25 * 1024 * 1024) {
+        toast.error("Please upload a smaller file (25Mb Max)");
         return;
       }
 

@@ -11,7 +11,7 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Chat with PDFs",
   description:
-    "A Next.Js app built using OpenAI, Xata.io, Postgres, and Langchain to chat with PDFs.",
+    "A Next.Js app built using Amazon Bedrock, Supabase, Drizzle ORM, and the AI SDK to chat with PDFs.",
   authors: {
     name: "PatrickLR7",
     url: "https://github.com/PatrickLR7",
